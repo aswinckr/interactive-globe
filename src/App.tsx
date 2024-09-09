@@ -24,25 +24,13 @@ function App() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
 
-    // Create gradient sphere
+    // Load texture
+    const textureLoader = new THREE.TextureLoader();
+    const marsTexture = textureLoader.load("src/textures/mars_1k_color.jpg");
+
+    // Create textured sphere
     const geometry = new THREE.SphereGeometry(1, 32, 32);
-    const material = new THREE.ShaderMaterial({
-      vertexShader: `
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: `
-        varying vec2 vUv;
-        void main() {
-          vec3 color1 = vec3(0.0, 0.0, 1.0); // Blue
-          vec3 color2 = vec3(1.0, 0.0, 0.0); // Red
-          gl_FragColor = vec4(mix(color1, color2, vUv.y), 1.0);
-        }
-      `,
-    });
+    const material = new THREE.MeshBasicMaterial({ map: marsTexture });
     const sphere = new THREE.Mesh(geometry, material);
     scene.add(sphere);
 
