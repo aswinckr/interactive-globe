@@ -23,6 +23,8 @@ function App() {
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true; // Enable shadow mapping
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Use soft shadows
 
     // Load texture
     const textureLoader = new THREE.TextureLoader();
@@ -30,9 +32,25 @@ function App() {
 
     // Create textured sphere
     const geometry = new THREE.SphereGeometry(1, 32, 32);
-    const material = new THREE.MeshBasicMaterial({ map: marsTexture });
+    const material = new THREE.MeshPhongMaterial({ map: marsTexture }); // Change to MeshPhongMaterial
     const sphere = new THREE.Mesh(geometry, material);
+    sphere.castShadow = true; // The sphere will cast shadows
+    sphere.receiveShadow = true; // The sphere will receive shadows
     scene.add(sphere);
+
+    // Add directional light (sunlight)
+    const sunlight = new THREE.DirectionalLight(0xffffff, 1);
+    sunlight.position.set(5, 3, 5); // Position the light
+    sunlight.castShadow = true; // Enable shadow casting
+    sunlight.shadow.mapSize.width = 1024; // Increase shadow map resolution
+    sunlight.shadow.mapSize.height = 1024;
+    sunlight.shadow.camera.near = 1;
+    sunlight.shadow.camera.far = 20;
+    scene.add(sunlight);
+
+    // Add ambient light for overall scene brightness
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+    scene.add(ambientLight);
 
     // Set up camera position
     camera.position.z = 3;
@@ -148,7 +166,7 @@ function App() {
     // Updated animation loop
     const animate = () => {
       requestAnimationFrame(animate);
-      sphere.rotation.y += 0.005;
+      sphere.rotation.y += 0.001; // Reduced from 0.005 to 0.001
       starField.rotation.y += 0.0002;
 
       // Animate shooting stars
