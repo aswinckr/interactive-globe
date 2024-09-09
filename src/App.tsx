@@ -26,7 +26,7 @@ function App() {
 
     // Load texture
     const textureLoader = new THREE.TextureLoader();
-    const marsTexture = textureLoader.load("src/textures/mars_1k_color.jpg");
+    const marsTexture = textureLoader.load("src/textures/jupiter2_4k.jpg");
 
     // Create textured sphere
     const geometry = new THREE.SphereGeometry(1, 32, 32);
