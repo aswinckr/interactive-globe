@@ -41,38 +41,142 @@ function App() {
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    // Add stars to the background
+    // Updated stars creation
     const starsGeometry = new THREE.BufferGeometry();
-    const starsMaterial = new THREE.PointsMaterial({
-      color: 0xffffff,
-      size: 0.1,
-    });
-
     const starsVertices = [];
+    const starsSizes = [];
+    const starsBrightness = [];
+
     for (let i = 0; i < 20000; i++) {
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.acos(Math.random() * 2 - 1);
-      const radius = 100 + Math.random() * 900; // Stars between 100 and 1000 units away
+      const radius = 100 + Math.random() * 900;
 
       const x = radius * Math.sin(phi) * Math.cos(theta);
       const y = radius * Math.sin(phi) * Math.sin(theta);
       const z = radius * Math.cos(phi);
 
       starsVertices.push(x, y, z);
+      starsSizes.push(0.1 + Math.random() * 0.9); // Sizes between 0.1 and 1
+      starsBrightness.push(0.2 + Math.random() * 0.8); // Brightness between 0.2 and 1
     }
 
     starsGeometry.setAttribute(
       "position",
       new THREE.Float32BufferAttribute(starsVertices, 3)
     );
+    starsGeometry.setAttribute(
+      "size",
+      new THREE.Float32BufferAttribute(starsSizes, 1)
+    );
+    starsGeometry.setAttribute(
+      "brightness",
+      new THREE.Float32BufferAttribute(starsBrightness, 1)
+    );
+
+    const starsMaterial = new THREE.ShaderMaterial({
+      uniforms: {
+        color: { value: new THREE.Color(0xffffff) },
+      },
+      vertexShader: `
+        attribute float size;
+        attribute float brightness;
+        varying float vBrightness;
+        void main() {
+          vBrightness = brightness;
+          vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = size * (300.0 / -mvPosition.z);
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 color;
+        varying float vBrightness;
+        void main() {
+          if (length(gl_PointCoord - vec2(0.5, 0.5)) > 0.5) discard;
+          gl_FragColor = vec4(color * vBrightness, 1.0);
+        }
+      `,
+    });
+
     const starField = new THREE.Points(starsGeometry, starsMaterial);
     scene.add(starField);
 
-    // Animation loop
+    // Add shooting stars
+    const shootingStarsMaterial = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 0.5,
+      transparent: true,
+      opacity: 0.8,
+    });
+
+    const createShootingStar = () => {
+      const shootingStarGeometry = new THREE.BufferGeometry();
+      const vertices = new Float32Array(6);
+      const velocity = new Float32Array(3);
+
+      for (let i = 0; i < 2; i++) {
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(Math.random() * 2 - 1);
+        const radius = 100 + Math.random() * 900;
+
+        vertices[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+        vertices[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+        vertices[i * 3 + 2] = radius * Math.cos(phi);
+      }
+
+      velocity[0] = (Math.random() - 0.5) * 0.3;
+      velocity[1] = (Math.random() - 0.5) * 0.3;
+      velocity[2] = (Math.random() - 0.5) * 0.3;
+
+      shootingStarGeometry.setAttribute(
+        "position",
+        new THREE.BufferAttribute(vertices, 3)
+      );
+      const shootingStar = new THREE.Points(
+        shootingStarGeometry,
+        shootingStarsMaterial
+      );
+      shootingStar.userData.velocity = velocity;
+      scene.add(shootingStar);
+
+      return shootingStar;
+    };
+
+    const shootingStars = Array(5).fill(null).map(createShootingStar);
+
+    // Updated animation loop
     const animate = () => {
       requestAnimationFrame(animate);
       sphere.rotation.y += 0.005;
-      starField.rotation.y += 0.0002; // Slowly rotate the star field
+      starField.rotation.y += 0.0002;
+
+      // Animate shooting stars
+      shootingStars.forEach((star) => {
+        const positions = star.geometry.attributes.position.array;
+        const velocity = star.userData.velocity;
+
+        for (let i = 0; i < positions.length; i += 3) {
+          positions[i] += velocity[0];
+          positions[i + 1] += velocity[1];
+          positions[i + 2] += velocity[2];
+        }
+
+        star.geometry.attributes.position.needsUpdate = true;
+
+        // Reset shooting star if it's too far from the center
+        if (
+          Math.abs(positions[0]) > 1000 ||
+          Math.abs(positions[1]) > 1000 ||
+          Math.abs(positions[2]) > 1000
+        ) {
+          const newStar = createShootingStar();
+          scene.remove(star);
+          const index = shootingStars.indexOf(star);
+          shootingStars[index] = newStar;
+        }
+      });
+
       controls.update();
       renderer.render(scene, camera);
     };
