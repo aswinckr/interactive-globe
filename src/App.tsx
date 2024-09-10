@@ -28,18 +28,22 @@ function App() {
 
     // Load texture
     const textureLoader = new THREE.TextureLoader();
-    const marsTexture = textureLoader.load("src/textures/jupiter2_4k.jpg");
+    const marsTexture = textureLoader.load("src/textures/8k_mars.jpg");
 
     // Create textured sphere
     const geometry = new THREE.SphereGeometry(1, 32, 32);
-    const material = new THREE.MeshPhongMaterial({ map: marsTexture }); // Change to MeshPhongMaterial
+    const material = new THREE.MeshPhongMaterial({
+      map: marsTexture,
+      shininess: 5, // Reduce shininess for a less reflective surface
+      emissive: new THREE.Color(0x222222), // Add a slight emissive color
+    });
     const sphere = new THREE.Mesh(geometry, material);
     sphere.castShadow = true; // The sphere will cast shadows
     sphere.receiveShadow = true; // The sphere will receive shadows
     scene.add(sphere);
 
     // Add directional light (sunlight)
-    const sunlight = new THREE.DirectionalLight(0xffffff, 1);
+    const sunlight = new THREE.DirectionalLight(0xffffff, 1.5); // Increase intensity
     sunlight.position.set(5, 3, 5); // Position the light
     sunlight.castShadow = true; // Enable shadow casting
     sunlight.shadow.mapSize.width = 1024; // Increase shadow map resolution
@@ -49,8 +53,12 @@ function App() {
     scene.add(sunlight);
 
     // Add ambient light for overall scene brightness
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.8); // Increase intensity
     scene.add(ambientLight);
+
+    // Add a hemisphere light for better color balance
+    const hemisphereLight = new THREE.HemisphereLight(0xffffbb, 0x080820, 0.5);
+    scene.add(hemisphereLight);
 
     // Set up camera position
     camera.position.z = 3;
