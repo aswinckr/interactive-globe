@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import "./App.css";
+import jupiterTexture from "/src/textures/8k_mars.jpg";
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -28,7 +29,7 @@ function App() {
 
     // Load texture
     const textureLoader = new THREE.TextureLoader();
-    const marsTexture = textureLoader.load("src/textures/8k_mars.jpg");
+    const marsTexture = textureLoader.load(jupiterTexture);
 
     // Create textured sphere
     const geometry = new THREE.SphereGeometry(1, 32, 32);
